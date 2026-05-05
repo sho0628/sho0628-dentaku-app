@@ -52,6 +52,20 @@
   .auto-btn.armed { color: #1a1a1a; }
   .auto-btn.flash { color: #0a84ff; }
 
+  .digit-count {
+    position: absolute;
+    top: calc(env(safe-area-inset-top) + 6px);
+    left: 64px;
+    background: transparent;
+    color: #2a2a2a;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    padding: 8px 4px;
+    font-family: inherit;
+    z-index: 10;
+    pointer-events: none;
+  }
+
   .display-wrap {
     flex: 1;
     display: flex;
@@ -121,6 +135,7 @@
 <body>
   <div class="app">
     <button class="auto-btn" id="autoBtn" aria-label="auto set">AUTO</button>
+    <span class="digit-count" id="digitCount"></span>
     <div class="display-wrap">
       <div class="display" id="display">0</div>
     </div>
@@ -153,6 +168,7 @@
 
   const displayEl = document.getElementById('display');
   const autoBtn = document.getElementById('autoBtn');
+  const digitCountEl = document.getElementById('digitCount');
   const clearBtn = document.querySelector('[data-action="clear"]');
 
   const state = {
@@ -201,6 +217,7 @@
     }
     clearBtn.textContent = (state.current !== '0' || state.awaitingOperand) ? 'C' : 'AC';
     autoBtn.classList.toggle('armed', state.target !== null);
+    digitCountEl.textContent = (state.rigQueue && state.rigQueue.length > 0) ? String(state.rigQueue.length) : '';
   }
 
   function applyDigit(d) {
@@ -304,7 +321,10 @@
     if (state.rigQueue && state.rigQueue.length > 0) {
       const d = state.rigQueue.shift();
       applyDigit(d);
-      if (state.rigQueue.length === 0) state.rigQueue = null;
+      if (state.rigQueue.length === 0) {
+        state.rigQueue = null;
+        render();
+      }
       return;
     }
 
