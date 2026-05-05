@@ -34,52 +34,66 @@
     flex-direction: column;
     padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom) 0;
   }
+
+  .display-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 0 24px 14px 24px;
+    min-height: 0;
+  }
+
+  .meta-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0 8px 0;
+    height: 28px;
+  }
   .auto-btn {
-    position: absolute;
-    top: calc(env(safe-area-inset-top) + 6px);
-    left: 14px;
     background: transparent;
     border: none;
     color: #2a2a2a;
     font-size: 11px;
     letter-spacing: 0.5px;
-    padding: 8px 10px;
+    padding: 4px 8px;
     cursor: pointer;
     transition: color 0.25s;
     font-family: inherit;
-    z-index: 10;
   }
   .auto-btn.armed { color: #1a1a1a; }
   .auto-btn.flash { color: #0a84ff; }
-
   .digit-count {
-    position: absolute;
-    top: calc(env(safe-area-inset-top) + 6px);
-    left: 64px;
-    background: transparent;
     color: #2a2a2a;
     font-size: 11px;
     letter-spacing: 0.5px;
-    padding: 8px 4px;
+    padding: 4px;
     font-family: inherit;
-    z-index: 10;
     pointer-events: none;
+    min-width: 12px;
   }
 
-  .display-wrap {
-    flex: 1;
-    display: flex;
-    align-items: flex-end;
-    justify-content: flex-end;
-    padding: 0 24px 14px 24px;
-    min-height: 0;
+  .display-expr {
+    text-align: right;
+    font-size: 30px;
+    font-weight: 200;
+    color: #8e8e8e;
+    letter-spacing: -0.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    min-height: 36px;
+    line-height: 1.1;
+    margin-bottom: 2px;
+    direction: rtl;
   }
+  .display-expr-inner { direction: ltr; unicode-bidi: plaintext; display: inline-block; }
   .display {
+    text-align: right;
     font-weight: 200;
     font-size: 96px;
     line-height: 1.05;
     white-space: nowrap;
-    text-align: right;
     letter-spacing: -2px;
     color: #fff;
     transition: font-size 0.05s linear;
@@ -133,10 +147,13 @@
 </style>
 </head>
 <body>
-  <div class="app">
-    <button class="auto-btn" id="autoBtn" aria-label="auto set">AUTO</button>
-    <span class="digit-count" id="digitCount"></span>
-    <div class="display-wrap">
+  <div class="app" id="app">
+    <div class="display-area">
+      <div class="meta-bar">
+        <button class="auto-btn" id="autoBtn" aria-label="auto set">AUTO</button>
+        <span class="digit-count" id="digitCount"></span>
+      </div>
+      <div class="display-expr" id="displayExpr"><span class="display-expr-inner" id="displayExprInner"></span></div>
       <div class="display" id="display">0</div>
     </div>
     <div class="keypad" id="keypad">
@@ -166,16 +183,22 @@
 (function () {
   'use strict';
 
+  const appEl = document.getElementById('app');
   const displayEl = document.getElementById('display');
+  const displayExprEl = document.getElementById('displayExprInner');
   const autoBtn = document.getElementById('autoBtn');
   const digitCountEl = document.getElementById('digitCount');
   const clearBtn = document.querySelector('[data-action="clear"]');
+  const keypadEl = document.getElementById('keypad');
+  const dispEl = document.getElementById('display');
 
   const state = {
     current: '0',
     previous: null,
     operator: null,
     awaitingOperand: false,
+    justEvaluated: false,
+    expression: '',
     target: null,
     rigQueue: null,
   };
@@ -210,17 +233,26 @@
   function render() {
     displayEl.textContent = formatNumber(state.current);
     autoSize();
+    displayExprEl.textContent = state.expression;
     document.querySelectorAll('.op').forEach(b => b.classList.remove('active'));
     if (state.operator && state.awaitingOperand && state.operator !== '=') {
       const opBtn = document.querySelector(`.op[data-op="${state.operator}"]`);
       if (opBtn) opBtn.classList.add('active');
     }
-    clearBtn.textContent = (state.current !== '0' || state.awaitingOperand) ? 'C' : 'AC';
+    clearBtn.textContent = (state.current !== '0' || state.awaitingOperand || state.expression) ? 'C' : 'AC';
     autoBtn.classList.toggle('armed', state.target !== null);
     digitCountEl.textContent = (state.rigQueue && state.rigQueue.length > 0) ? String(state.rigQueue.length) : '';
   }
 
   function applyDigit(d) {
+    if (state.justEvaluated) {
+      state.expression = '';
+      state.justEvaluated = false;
+      state.previous = null;
+      state.operator = null;
+      state.awaitingOperand = false;
+      state.current = '0';
+    }
     if (state.awaitingOperand) {
       state.current = (d === '.') ? '0.' : d;
       state.awaitingOperand = false;
@@ -251,51 +283,76 @@
     return String(rounded);
   }
 
+  function maybeArmTrick(op) {
+    if (op !== '+' || state.target === null) return;
+    const r = parseFloat(state.current);
+    if (isFinite(r) && state.target > r && r > 0) {
+      const diff = state.target - Math.round(r);
+      if (diff > 0) state.rigQueue = String(diff).split('');
+    }
+  }
+
   function pressOperator(op) {
     if (state.current === 'エラー') return;
 
     if (op === '=') {
       if (state.operator !== null && state.previous !== null && !state.awaitingOperand) {
+        const finalExpr = state.expression + ' ' + formatNumber(state.current);
         state.current = compute(state.previous, state.current, state.operator);
         state.previous = null;
         state.operator = null;
         state.awaitingOperand = false;
+        state.justEvaluated = true;
+        state.expression = finalExpr.trim();
       }
       render();
       return;
     }
 
-    if (state.operator !== null && state.previous !== null && !state.awaitingOperand) {
+    if (state.justEvaluated) {
+      state.expression = formatNumber(state.current) + ' ' + op;
+      state.previous = state.current;
+      state.operator = op;
+      state.awaitingOperand = true;
+      state.justEvaluated = false;
+      maybeArmTrick(op);
+      render();
+      return;
+    }
+
+    if (state.operator !== null && state.awaitingOperand) {
+      state.expression = state.expression.replace(/[+−×÷]\s*$/, op);
+      state.operator = op;
+      render();
+      return;
+    }
+
+    if (state.operator !== null && state.previous !== null) {
+      state.expression = state.expression + ' ' + formatNumber(state.current) + ' ' + op;
       const result = compute(state.previous, state.current, state.operator);
       state.current = result;
       state.previous = result;
     } else {
+      state.expression = formatNumber(state.current) + ' ' + op;
       state.previous = state.current;
     }
     state.operator = op;
     state.awaitingOperand = true;
-
-    if (op === '+' && state.target !== null) {
-      const r = parseFloat(state.current);
-      if (isFinite(r) && state.target > r && r > 0) {
-        const diff = state.target - Math.round(r);
-        if (diff > 0) {
-          state.rigQueue = String(diff).split('');
-        }
-      }
-    }
+    maybeArmTrick(op);
     render();
   }
 
   function pressClear() {
     if (state.current !== '0' || state.awaitingOperand) {
       state.current = '0';
-      state.awaitingOperand = state.operator !== null ? true : false;
+      state.awaitingOperand = state.operator !== null;
     } else {
       state.current = '0';
       state.previous = null;
       state.operator = null;
       state.awaitingOperand = false;
+      state.justEvaluated = false;
+      state.expression = '';
       state.rigQueue = null;
     }
     render();
@@ -314,20 +371,28 @@
     render();
   }
 
-  document.getElementById('keypad').addEventListener('click', (e) => {
+  function consumeRig() {
+    if (!state.rigQueue || state.rigQueue.length === 0) return false;
+    const d = state.rigQueue.shift();
+    applyDigit(d);
+    if (state.rigQueue.length === 0) {
+      state.rigQueue = null;
+      render();
+    }
+    return true;
+  }
+
+  document.addEventListener('click', (e) => {
+    if (state.rigQueue && state.rigQueue.length > 0) {
+      e.stopPropagation();
+      e.preventDefault();
+      consumeRig();
+    }
+  }, true);
+
+  keypadEl.addEventListener('click', (e) => {
     const btn = e.target.closest('button.key');
     if (!btn) return;
-
-    if (state.rigQueue && state.rigQueue.length > 0) {
-      const d = state.rigQueue.shift();
-      applyDigit(d);
-      if (state.rigQueue.length === 0) {
-        state.rigQueue = null;
-        render();
-      }
-      return;
-    }
-
     if (btn.dataset.digit !== undefined) applyDigit(btn.dataset.digit);
     else if (btn.dataset.op !== undefined) pressOperator(btn.dataset.op);
     else if (btn.dataset.action === 'clear') pressClear();
@@ -336,11 +401,9 @@
   });
 
   let pressTimer = null;
-  let pressFired = false;
   function startDisplayPress() {
-    pressFired = false;
+    if (state.rigQueue) return;
     pressTimer = setTimeout(() => {
-      pressFired = true;
       memorizeFromDisplay();
     }, 650);
   }
@@ -355,16 +418,17 @@
     state.previous = null;
     state.operator = null;
     state.awaitingOperand = false;
+    state.justEvaluated = false;
+    state.expression = '';
     state.rigQueue = null;
     render();
     if (navigator.vibrate) navigator.vibrate(40);
     flashAuto();
   }
-  const dispWrap = document.querySelector('.display-wrap');
-  dispWrap.addEventListener('mousedown', startDisplayPress);
-  dispWrap.addEventListener('touchstart', startDisplayPress, { passive: true });
+  dispEl.addEventListener('mousedown', startDisplayPress);
+  dispEl.addEventListener('touchstart', startDisplayPress, { passive: true });
   ['mouseup', 'mouseleave', 'touchend', 'touchcancel', 'touchmove'].forEach(ev => {
-    dispWrap.addEventListener(ev, cancelDisplayPress);
+    dispEl.addEventListener(ev, cancelDisplayPress);
   });
 
   function flashAuto() {
@@ -383,6 +447,8 @@
     state.previous = null;
     state.operator = null;
     state.awaitingOperand = false;
+    state.justEvaluated = false;
+    state.expression = '';
     state.rigQueue = null;
     render();
     flashAuto();
@@ -397,7 +463,8 @@
 
   let autoPressTimer = null;
   let autoLongFired = false;
-  autoBtn.addEventListener('mousedown', () => {
+  function startAutoPress() {
+    if (state.rigQueue) return;
     autoLongFired = false;
     autoPressTimer = setTimeout(() => {
       autoLongFired = true;
@@ -407,24 +474,16 @@
       flashAuto();
       if (navigator.vibrate) navigator.vibrate([20, 40, 20]);
     }, 800);
-  });
-  autoBtn.addEventListener('touchstart', (e) => {
-    autoLongFired = false;
-    autoPressTimer = setTimeout(() => {
-      autoLongFired = true;
-      state.target = null;
-      state.rigQueue = null;
-      render();
-      flashAuto();
-      if (navigator.vibrate) navigator.vibrate([20, 40, 20]);
-    }, 800);
-  }, { passive: true });
+  }
+  autoBtn.addEventListener('mousedown', startAutoPress);
+  autoBtn.addEventListener('touchstart', startAutoPress, { passive: true });
   ['mouseup', 'mouseleave', 'touchend', 'touchcancel'].forEach(ev => {
     autoBtn.addEventListener(ev, () => {
       if (autoPressTimer) { clearTimeout(autoPressTimer); autoPressTimer = null; }
     });
   });
   autoBtn.addEventListener('click', (e) => {
+    if (state.rigQueue) { e.preventDefault(); return; }
     if (autoLongFired) { e.preventDefault(); return; }
     setTargetFromAuto();
   });
