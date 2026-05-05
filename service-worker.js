@@ -1,4 +1,4 @@
-const CACHE_NAME = 'dentaku-v1';
+const CACHE_NAME = 'dentaku-v2';
 const ASSETS = [
   './',
   './index.html',

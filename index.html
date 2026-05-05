@@ -149,6 +149,10 @@
     font-size: 32px;
   }
   button.key.func:active { filter: brightness(1.15); }
+  [data-action="clear"] .clear-icon { display: none; width: 38px; height: 28px; }
+  [data-action="clear"] .clear-text { display: inline; }
+  [data-action="clear"].back .clear-text { display: none; }
+  [data-action="clear"].back .clear-icon { display: block; }
   button.key.op {
     background: #ff9500;
     color: #fff;
@@ -166,6 +170,7 @@
     button.key.op { font-size: 50px; }
     .keypad { gap: 14px; padding: 0 0 18px 0; height: clamp(490px, 53vh, 700px); }
     .calc-icon-btn svg { width: 32px; height: 32px; }
+    [data-action="clear"] .clear-icon { width: 46px; height: 34px; }
     .meta-bar { top: calc(env(safe-area-inset-top) + 26px); left: 32px; gap: 12px; }
     .auto-btn svg { width: 30px; height: 24px; }
     .digit-count { font-size: 14px; }
@@ -193,7 +198,14 @@
       <div class="display-wrap"><div class="display" id="display">0</div></div>
     </div>
     <div class="keypad" id="keypad">
-      <button class="key func" data-action="clear">AC</button>
+      <button class="key func" data-action="clear">
+        <span class="clear-text">AC</span>
+        <svg class="clear-icon" viewBox="0 0 32 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M30 3 L11 3 L1 12 L11 21 L30 21 A1 1 0 0 0 31 20 L31 4 A1 1 0 0 0 30 3 Z"/>
+          <line x1="14" y1="9" x2="22" y2="15"/>
+          <line x1="22" y1="9" x2="14" y2="15"/>
+        </svg>
+      </button>
       <button class="key func" data-action="negate">+/−</button>
       <button class="key func" data-action="percent">%</button>
       <button class="key op" data-op="÷">÷</button>
@@ -284,7 +296,8 @@
     displayEl.textContent = buildDisplayText();
     displayExprEl.textContent = state.justEvaluated ? state.lastEquation : '';
     displayExprWrapEl.style.visibility = state.justEvaluated && state.lastEquation ? 'visible' : 'hidden';
-    clearBtn.textContent = (state.current !== '0' || state.awaitingOperand || state.expression || state.justEvaluated) ? 'C' : 'AC';
+    const isInitial = state.current === '0' && !state.awaitingOperand && !state.expression && !state.justEvaluated;
+    clearBtn.classList.toggle('back', !isInitial);
     autoBtn.classList.toggle('armed', state.target !== null);
     digitCountEl.textContent = (state.rigQueue && state.rigQueue.length > 0) ? String(state.rigQueue.length) : '';
   }
@@ -390,6 +403,14 @@
   }
 
   function pressClear() {
+    const isInitial = state.current === '0' && !state.awaitingOperand && !state.expression && !state.justEvaluated;
+
+    if (isInitial) {
+      state.rigQueue = null;
+      render();
+      return;
+    }
+
     if (state.justEvaluated) {
       state.current = '0';
       state.previous = null;
@@ -399,18 +420,26 @@
       state.expression = '';
       state.lastEquation = '';
       state.rigQueue = null;
-    } else if (state.current !== '0' || state.awaitingOperand) {
-      state.current = '0';
-      state.awaitingOperand = state.operator !== null;
-    } else {
-      state.current = '0';
-      state.previous = null;
+      render();
+      return;
+    }
+
+    if (state.awaitingOperand) {
+      state.expression = state.expression.replace(/[+−×÷]$/, '');
       state.operator = null;
+      state.previous = null;
       state.awaitingOperand = false;
-      state.justEvaluated = false;
-      state.expression = '';
-      state.lastEquation = '';
-      state.rigQueue = null;
+      if (state.expression === formatNumber(state.current)) state.expression = '';
+      render();
+      return;
+    }
+
+    if (state.current === 'エラー') {
+      state.current = '0';
+    } else if (state.current.length <= 1 || (state.current.startsWith('-') && state.current.length === 2)) {
+      state.current = '0';
+    } else {
+      state.current = state.current.slice(0, -1);
     }
     render();
   }
