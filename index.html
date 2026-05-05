@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>計算機</title>
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+  html, body {
+    height: 100%;
+    background: #000;
+    color: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", "Hiragino Sans", "Yu Gothic", sans-serif;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+  .app {
+    position: relative;
+    max-width: 440px;
+    margin: 0 auto;
+    height: 100vh;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom) 0;
+  }
+  .auto-btn {
+    position: absolute;
+    top: calc(env(safe-area-inset-top) + 6px);
+    left: 14px;
+    background: transparent;
+    border: none;
+    color: #2a2a2a;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    padding: 8px 10px;
+    cursor: pointer;
+    transition: color 0.25s;
+    font-family: inherit;
+    z-index: 10;
+  }
+  .auto-btn.armed { color: #1a1a1a; }
+  .auto-btn.flash { color: #0a84ff; }
+
+  .display-wrap {
+    flex: 1;
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-end;
+    padding: 0 24px 14px 24px;
+    min-height: 0;
+  }
+  .display {
+    font-weight: 200;
+    font-size: 96px;
+    line-height: 1.05;
+    white-space: nowrap;
+    text-align: right;
+    letter-spacing: -2px;
+    color: #fff;
+    transition: font-size 0.05s linear;
+  }
+
+  .keypad {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    padding: 0 12px 16px 12px;
+  }
+  button.key {
+    aspect-ratio: 1 / 1;
+    border-radius: 9999px;
+    border: none;
+    font-size: 36px;
+    font-weight: 400;
+    cursor: pointer;
+    color: #fff;
+    background: #333333;
+    font-family: inherit;
+    transition: filter 0.08s ease-out;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+  }
+  button.key:active { filter: brightness(1.6); }
+  button.key.func {
+    background: #a5a5a5;
+    color: #000;
+    font-size: 30px;
+  }
+  button.key.func:active { filter: brightness(1.15); }
+  button.key.op {
+    background: #ff9f0a;
+    color: #fff;
+    font-size: 40px;
+  }
+  button.key.op.active {
+    background: #fff;
+    color: #ff9f0a;
+  }
+  button.key.zero {
+    grid-column: span 2;
+    aspect-ratio: auto;
+    border-radius: 9999px;
+    justify-content: flex-start;
+    padding-left: 34px;
+  }
+</style>
+</head>
+<body>
+  <div class="app">
+    <button class="auto-btn" id="autoBtn" aria-label="auto set">AUTO</button>
+    <div class="display-wrap">
+      <div class="display" id="display">0</div>
+    </div>
+    <div class="keypad" id="keypad">
+      <button class="key func" data-action="clear">AC</button>
+      <button class="key func" data-action="negate">+/−</button>
+      <button class="key func" data-action="percent">%</button>
+      <button class="key op" data-op="÷">÷</button>
+      <button class="key" data-digit="7">7</button>
+      <button class="key" data-digit="8">8</button>
+      <button class="key" data-digit="9">9</button>
+      <button class="key op" data-op="×">×</button>
+      <button class="key" data-digit="4">4</button>
+      <button class="key" data-digit="5">5</button>
+      <button class="key" data-digit="6">6</button>
+      <button class="key op" data-op="−">−</button>
+      <button class="key" data-digit="1">1</button>
+      <button class="key" data-digit="2">2</button>
+      <button class="key" data-digit="3">3</button>
+      <button class="key op" data-op="+">+</button>
+      <button class="key zero" data-digit="0">0</button>
+      <button class="key" data-digit=".">.</button>
+      <button class="key op" data-op="=">=</button>
+    </div>
+  </div>
+
+<script>
+(function () {
+  'use strict';
+
+  const displayEl = document.getElementById('display');
+  const autoBtn = document.getElementById('autoBtn');
+  const clearBtn = document.querySelector('[data-action="clear"]');
+
+  const state = {
+    current: '0',
+    previous: null,
+    operator: null,
+    awaitingOperand: false,
+    target: null,
+    rigQueue: null,
+  };
+
+  function formatNumber(s) {
+    if (s === 'エラー') return s;
+    if (s == null) return '0';
+    let neg = '';
+    if (s.startsWith('-')) { neg = '-'; s = s.slice(1); }
+    const dotIdx = s.indexOf('.');
+    let intPart = dotIdx === -1 ? s : s.slice(0, dotIdx);
+    const decPart = dotIdx === -1 ? null : s.slice(dotIdx + 1);
+    if (intPart === '' || intPart === '-') intPart = '0';
+    const n = Number(intPart);
+    intPart = isFinite(n) ? n.toLocaleString('en-US') : intPart;
+    let out = neg + intPart;
+    if (decPart !== null) out += '.' + decPart;
+    return out;
+  }
+
+  function autoSize() {
+    const len = displayEl.textContent.length;
+    let size = 96;
+    if (len > 6) size = 84;
+    if (len > 8) size = 70;
+    if (len > 10) size = 58;
+    if (len > 12) size = 48;
+    if (len > 14) size = 40;
+    displayEl.style.fontSize = size + 'px';
+  }
+
+  function render() {
+    displayEl.textContent = formatNumber(state.current);
+    autoSize();
+    document.querySelectorAll('.op').forEach(b => b.classList.remove('active'));
+    if (state.operator && state.awaitingOperand && state.operator !== '=') {
+      const opBtn = document.querySelector(`.op[data-op="${state.operator}"]`);
+      if (opBtn) opBtn.classList.add('active');
+    }
+    clearBtn.textContent = (state.current !== '0' || state.awaitingOperand) ? 'C' : 'AC';
+    autoBtn.classList.toggle('armed', state.target !== null);
+  }
+
+  function applyDigit(d) {
+    if (state.awaitingOperand) {
+      state.current = (d === '.') ? '0.' : d;
+      state.awaitingOperand = false;
+    } else if (d === '.') {
+      if (!state.current.includes('.')) state.current += '.';
+    } else if (state.current === '0') {
+      state.current = d;
+    } else {
+      if (state.current.replace('-', '').replace('.', '').length >= 9) return;
+      state.current += d;
+    }
+    render();
+  }
+
+  function compute(a, b, op) {
+    const x = parseFloat(a);
+    const y = parseFloat(b);
+    let r;
+    switch (op) {
+      case '+': r = x + y; break;
+      case '−': r = x - y; break;
+      case '×': r = x * y; break;
+      case '÷': r = y === 0 ? NaN : x / y; break;
+      default: r = y;
+    }
+    if (!isFinite(r) || isNaN(r)) return 'エラー';
+    const rounded = Math.round(r * 1e10) / 1e10;
+    return String(rounded);
+  }
+
+  function pressOperator(op) {
+    if (state.current === 'エラー') return;
+
+    if (op === '=') {
+      if (state.operator !== null && state.previous !== null && !state.awaitingOperand) {
+        state.current = compute(state.previous, state.current, state.operator);
+        state.previous = null;
+        state.operator = null;
+        state.awaitingOperand = false;
+      }
+      render();
+      return;
+    }
+
+    if (state.operator !== null && state.previous !== null && !state.awaitingOperand) {
+      const result = compute(state.previous, state.current, state.operator);
+      state.current = result;
+      state.previous = result;
+    } else {
+      state.previous = state.current;
+    }
+    state.operator = op;
+    state.awaitingOperand = true;
+
+    if (op === '+' && state.target !== null) {
+      const r = parseFloat(state.current);
+      if (isFinite(r) && state.target > r && r > 0) {
+        const diff = state.target - Math.round(r);
+        if (diff > 0) {
+          state.rigQueue = String(diff).split('');
+        }
+      }
+    }
+    render();
+  }
+
+  function pressClear() {
+    if (state.current !== '0' || state.awaitingOperand) {
+      state.current = '0';
+      state.awaitingOperand = state.operator !== null ? true : false;
+    } else {
+      state.current = '0';
+      state.previous = null;
+      state.operator = null;
+      state.awaitingOperand = false;
+      state.rigQueue = null;
+    }
+    render();
+  }
+
+  function pressNegate() {
+    if (state.current === '0' || state.current === 'エラー') return;
+    state.current = state.current.startsWith('-') ? state.current.slice(1) : '-' + state.current;
+    render();
+  }
+
+  function pressPercent() {
+    if (state.current === 'エラー') return;
+    const n = parseFloat(state.current) / 100;
+    state.current = String(n);
+    render();
+  }
+
+  document.getElementById('keypad').addEventListener('click', (e) => {
+    const btn = e.target.closest('button.key');
+    if (!btn) return;
+
+    if (state.rigQueue && state.rigQueue.length > 0) {
+      const d = state.rigQueue.shift();
+      applyDigit(d);
+      if (state.rigQueue.length === 0) state.rigQueue = null;
+      return;
+    }
+
+    if (btn.dataset.digit !== undefined) applyDigit(btn.dataset.digit);
+    else if (btn.dataset.op !== undefined) pressOperator(btn.dataset.op);
+    else if (btn.dataset.action === 'clear') pressClear();
+    else if (btn.dataset.action === 'negate') pressNegate();
+    else if (btn.dataset.action === 'percent') pressPercent();
+  });
+
+  let pressTimer = null;
+  let pressFired = false;
+  function startDisplayPress() {
+    pressFired = false;
+    pressTimer = setTimeout(() => {
+      pressFired = true;
+      memorizeFromDisplay();
+    }, 650);
+  }
+  function cancelDisplayPress() {
+    if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
+  }
+  function memorizeFromDisplay() {
+    const v = parseFloat(state.current);
+    if (!isFinite(v) || v <= 0) return;
+    state.target = Math.round(v);
+    state.current = '0';
+    state.previous = null;
+    state.operator = null;
+    state.awaitingOperand = false;
+    state.rigQueue = null;
+    render();
+    if (navigator.vibrate) navigator.vibrate(40);
+    flashAuto();
+  }
+  const dispWrap = document.querySelector('.display-wrap');
+  dispWrap.addEventListener('mousedown', startDisplayPress);
+  dispWrap.addEventListener('touchstart', startDisplayPress, { passive: true });
+  ['mouseup', 'mouseleave', 'touchend', 'touchcancel', 'touchmove'].forEach(ev => {
+    dispWrap.addEventListener(ev, cancelDisplayPress);
+  });
+
+  function flashAuto() {
+    autoBtn.classList.add('flash');
+    setTimeout(() => autoBtn.classList.remove('flash'), 500);
+  }
+
+  function setTargetFromAuto() {
+    const future = new Date(Date.now() + 3 * 60 * 1000);
+    const m = String(future.getMonth() + 1);
+    const d = String(future.getDate()).padStart(2, '0');
+    const h = String(future.getHours()).padStart(2, '0');
+    const mm = String(future.getMinutes()).padStart(2, '0');
+    state.target = parseInt(m + d + h + mm, 10);
+    state.current = String(state.target);
+    state.previous = null;
+    state.operator = null;
+    state.awaitingOperand = false;
+    state.rigQueue = null;
+    render();
+    flashAuto();
+    setTimeout(() => {
+      if (state.current === String(state.target) && !state.operator) {
+        state.current = '0';
+        render();
+      }
+    }, 1500);
+    if (navigator.vibrate) navigator.vibrate(40);
+  }
+
+  let autoPressTimer = null;
+  let autoLongFired = false;
+  autoBtn.addEventListener('mousedown', () => {
+    autoLongFired = false;
+    autoPressTimer = setTimeout(() => {
+      autoLongFired = true;
+      state.target = null;
+      state.rigQueue = null;
+      render();
+      flashAuto();
+      if (navigator.vibrate) navigator.vibrate([20, 40, 20]);
+    }, 800);
+  });
+  autoBtn.addEventListener('touchstart', (e) => {
+    autoLongFired = false;
+    autoPressTimer = setTimeout(() => {
+      autoLongFired = true;
+      state.target = null;
+      state.rigQueue = null;
+      render();
+      flashAuto();
+      if (navigator.vibrate) navigator.vibrate([20, 40, 20]);
+    }, 800);
+  }, { passive: true });
+  ['mouseup', 'mouseleave', 'touchend', 'touchcancel'].forEach(ev => {
+    autoBtn.addEventListener(ev, () => {
+      if (autoPressTimer) { clearTimeout(autoPressTimer); autoPressTimer = null; }
+    });
+  });
+  autoBtn.addEventListener('click', (e) => {
+    if (autoLongFired) { e.preventDefault(); return; }
+    setTargetFromAuto();
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
