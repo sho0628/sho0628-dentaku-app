@@ -77,18 +77,38 @@
     overflow: hidden;
     width: 100%;
   }
+  .display-expr {
+    font-size: 28px;
+    font-weight: 300;
+    color: #8e8e8e;
+    line-height: 1.1;
+    letter-spacing: -0.5px;
+    overflow: hidden;
+    white-space: nowrap;
+    width: 100%;
+    max-width: 100%;
+    direction: rtl;
+    margin-bottom: 4px;
+    min-height: 32px;
+  }
+  .display-expr-inner { direction: ltr; unicode-bidi: bidi-override; display: inline-block; }
+  .display-wrap {
+    overflow: hidden;
+    width: 100%;
+    max-width: 100%;
+    direction: rtl;
+    white-space: nowrap;
+  }
   .display {
-    text-align: right;
     font-weight: 300;
     font-size: 100px;
     line-height: 1.05;
-    white-space: nowrap;
     letter-spacing: -2px;
     color: #fff;
-    overflow: hidden;
-    text-overflow: clip;
-    width: 100%;
-    max-width: 100%;
+    direction: ltr;
+    unicode-bidi: bidi-override;
+    display: inline-block;
+    white-space: nowrap;
     transition: font-size 0.05s linear;
   }
 
@@ -133,6 +153,7 @@
 
   @media (min-width: 700px) {
     .display { font-size: 80px; letter-spacing: -1.5px; }
+    .display-expr { font-size: 32px; min-height: 38px; margin-bottom: 6px; }
     .display-area { padding: 0 36px 22px 36px; }
     button.key { font-size: 42px; font-weight: 300; }
     button.key.func { font-size: 40px; color: #fff; }
@@ -162,7 +183,8 @@
       <span class="digit-count" id="digitCount"></span>
     </div>
     <div class="display-area">
-      <div class="display" id="display">0</div>
+      <div class="display-expr" id="displayExpr"><span class="display-expr-inner" id="displayExprInner"></span></div>
+      <div class="display-wrap"><div class="display" id="display">0</div></div>
     </div>
     <div class="keypad" id="keypad">
       <button class="key func" data-action="clear">AC</button>
@@ -207,6 +229,9 @@
   'use strict';
 
   const displayEl = document.getElementById('display');
+  const displayWrapEl = document.querySelector('.display-wrap');
+  const displayExprEl = document.getElementById('displayExprInner');
+  const displayExprWrapEl = document.getElementById('displayExpr');
   const autoBtn = document.getElementById('autoBtn');
   const digitCountEl = document.getElementById('digitCount');
   const clearBtn = document.querySelector('[data-action="clear"]');
@@ -219,6 +244,7 @@
     awaitingOperand: false,
     justEvaluated: false,
     expression: '',
+    lastEquation: '',
     target: null,
     rigQueue: null,
   };
@@ -250,7 +276,9 @@
 
   function render() {
     displayEl.textContent = buildDisplayText();
-    clearBtn.textContent = (state.current !== '0' || state.awaitingOperand || state.expression) ? 'C' : 'AC';
+    displayExprEl.textContent = state.justEvaluated ? state.lastEquation : '';
+    displayExprWrapEl.style.visibility = state.justEvaluated && state.lastEquation ? 'visible' : 'hidden';
+    clearBtn.textContent = (state.current !== '0' || state.awaitingOperand || state.expression || state.justEvaluated) ? 'C' : 'AC';
     autoBtn.classList.toggle('armed', state.target !== null);
     digitCountEl.textContent = (state.rigQueue && state.rigQueue.length > 0) ? String(state.rigQueue.length) : '';
   }
@@ -258,6 +286,7 @@
   function applyDigit(d) {
     if (state.justEvaluated) {
       state.expression = '';
+      state.lastEquation = '';
       state.justEvaluated = false;
       state.previous = null;
       state.operator = null;
@@ -307,12 +336,14 @@
 
     if (op === '=') {
       if (state.operator !== null && state.previous !== null && !state.awaitingOperand) {
+        const eq = state.expression + formatNumber(state.current) + '=';
         state.current = compute(state.previous, state.current, state.operator);
         state.previous = null;
         state.operator = null;
         state.awaitingOperand = false;
         state.justEvaluated = true;
         state.expression = '';
+        state.lastEquation = eq;
       }
       render();
       return;
@@ -320,6 +351,7 @@
 
     if (state.justEvaluated) {
       state.expression = formatNumber(state.current) + op;
+      state.lastEquation = '';
       state.previous = state.current;
       state.operator = op;
       state.awaitingOperand = true;
@@ -352,7 +384,16 @@
   }
 
   function pressClear() {
-    if (state.current !== '0' || state.awaitingOperand) {
+    if (state.justEvaluated) {
+      state.current = '0';
+      state.previous = null;
+      state.operator = null;
+      state.awaitingOperand = false;
+      state.justEvaluated = false;
+      state.expression = '';
+      state.lastEquation = '';
+      state.rigQueue = null;
+    } else if (state.current !== '0' || state.awaitingOperand) {
       state.current = '0';
       state.awaitingOperand = state.operator !== null;
     } else {
@@ -362,6 +403,7 @@
       state.awaitingOperand = false;
       state.justEvaluated = false;
       state.expression = '';
+      state.lastEquation = '';
       state.rigQueue = null;
     }
     render();
@@ -426,6 +468,7 @@
     state.awaitingOperand = false;
     state.justEvaluated = false;
     state.expression = '';
+    state.lastEquation = '';
     state.rigQueue = null;
     render();
     if (navigator.vibrate) navigator.vibrate(40);
@@ -455,6 +498,7 @@
     state.awaitingOperand = false;
     state.justEvaluated = false;
     state.expression = '';
+    state.lastEquation = '';
     state.rigQueue = null;
     render();
     flashAuto();
