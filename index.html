@@ -119,7 +119,7 @@
   }
   button.key:active { filter: brightness(1.6); }
   button.key.func {
-    background: #a6a6a6;
+    background: #7c7c7c;
     color: #000;
     font-size: 32px;
   }
@@ -132,21 +132,21 @@
   .calc-icon-btn svg { width: 36px; height: 36px; }
 
   @media (min-width: 700px) {
-    .display { font-size: 150px; letter-spacing: -2.5px; }
-    .display-area { padding: 0 36px 28px 36px; }
-    button.key { font-size: 44px; font-weight: 300; }
-    button.key.func { font-size: 38px; }
-    button.key.op { font-size: 52px; }
-    .keypad { gap: 14px; padding: 0 14px 18px 14px; height: clamp(520px, 58vh, 760px); }
-    .calc-icon-btn svg { width: 38px; height: 38px; }
+    .display { font-size: 80px; letter-spacing: -1.5px; }
+    .display-area { padding: 0 36px 22px 36px; }
+    button.key { font-size: 42px; font-weight: 300; }
+    button.key.func { font-size: 28px; }
+    button.key.op { font-size: 40px; }
+    .keypad { gap: 14px; padding: 0 14px 18px 14px; height: clamp(420px, 45vh, 580px); }
+    .calc-icon-btn svg { width: 32px; height: 32px; }
     .meta-bar { top: calc(env(safe-area-inset-top) + 26px); left: 32px; gap: 12px; }
     .auto-btn svg { width: 30px; height: 24px; }
     .digit-count { font-size: 14px; }
   }
 
   @media (min-width: 700px) and (orientation: landscape) {
-    .keypad { height: clamp(420px, 58vh, 600px); }
-    .display { font-size: 110px; }
+    .keypad { height: clamp(360px, 50vh, 520px); }
+    .display { font-size: 70px; }
   }
 </style>
 </head>
