@@ -477,7 +477,7 @@
       return;
     }
     const btn = e.target.closest('button.key');
-    const allowed = btn && (btn.dataset.op !== undefined || btn.dataset.action !== undefined);
+    const allowed = btn && btn.dataset.op === '=';
     if (!allowed) {
       e.stopPropagation();
       e.preventDefault();
