@@ -463,23 +463,33 @@
     const d = state.rigQueue.shift();
     applyDigit(d);
     if (state.rigQueue.length === 0) {
-      state.rigQueue = null;
       render();
     }
     return true;
   }
 
   document.addEventListener('click', (e) => {
-    if (state.rigQueue && state.rigQueue.length > 0) {
+    if (state.rigQueue === null) return;
+    if (state.rigQueue.length > 0) {
       e.stopPropagation();
       e.preventDefault();
       consumeRig();
+      return;
+    }
+    const btn = e.target.closest('button.key');
+    const allowed = btn && (btn.dataset.op !== undefined || btn.dataset.action !== undefined);
+    if (!allowed) {
+      e.stopPropagation();
+      e.preventDefault();
     }
   }, true);
 
   keypadEl.addEventListener('click', (e) => {
     const btn = e.target.closest('button.key');
     if (!btn) return;
+    if (state.rigQueue !== null && state.rigQueue.length === 0) {
+      state.rigQueue = null;
+    }
     if (btn.dataset.digit !== undefined) applyDigit(btn.dataset.digit);
     else if (btn.dataset.op !== undefined) pressOperator(btn.dataset.op);
     else if (btn.dataset.action === 'clear') pressClear();
