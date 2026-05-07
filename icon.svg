@@ -1,16 +1,22 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <rect width="512" height="512" fill="#000"/>
-  <g fill="#333">
-    <circle cx="120" cy="320" r="34"/>
-    <circle cx="220" cy="320" r="34"/>
-    <circle cx="320" cy="320" r="34"/>
+  <text x="448" y="200" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif" font-size="160" font-weight="200" fill="#fff" text-anchor="end">125</text>
+  <g fill="#a5a5a5">
+    <circle cx="88" cy="280" r="40"/>
+    <circle cx="200" cy="280" r="40"/>
+    <circle cx="312" cy="280" r="40"/>
   </g>
-  <circle cx="420" cy="320" r="38" fill="#ff9500"/>
+  <circle cx="424" cy="280" r="40" fill="#ff9500"/>
   <g fill="#333">
-    <circle cx="120" cy="410" r="34"/>
-    <circle cx="220" cy="410" r="34"/>
-    <circle cx="320" cy="410" r="34"/>
+    <circle cx="88" cy="360" r="40"/>
+    <circle cx="200" cy="360" r="40"/>
+    <circle cx="312" cy="360" r="40"/>
   </g>
-  <circle cx="420" cy="410" r="38" fill="#ff9500"/>
-  <text x="450" y="220" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif" font-size="200" font-weight="200" fill="#fff" text-anchor="end">0</text>
+  <circle cx="424" cy="360" r="40" fill="#ff9500"/>
+  <g fill="#333">
+    <circle cx="88" cy="440" r="40"/>
+    <circle cx="200" cy="440" r="40"/>
+    <circle cx="312" cy="440" r="40"/>
+  </g>
+  <circle cx="424" cy="440" r="40" fill="#ff9500"/>
 </svg>
