@@ -1,9 +1,12 @@
-const CACHE_NAME = 'dentaku-v26';
+const CACHE_NAME = 'dentaku-v27';
 const ASSETS = [
   './',
   './index.html',
   './manifest.webmanifest',
-  './icon.svg?v=2',
+  './icon.svg',
+  './icon-180.png',
+  './icon-192.png',
+  './icon-512.png',
 ];
 
 self.addEventListener('install', (event) => {
