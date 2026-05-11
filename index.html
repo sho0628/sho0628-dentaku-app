@@ -31,12 +31,17 @@
   }
   .app {
     position: relative;
-    margin: 0 auto;
-    height: 100vh;
-    height: 100dvh;
+    margin: 8vh auto 0;
+    margin: 8dvh auto 0;
+    height: 92vh;
+    height: 92dvh;
     display: flex;
     flex-direction: column;
     padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom) 0;
+  }
+
+  @media (min-width: 700px) {
+    .app { margin: 0 auto; height: 100vh; height: 100dvh; }
   }
 
   .meta-bar {
