@@ -25,11 +25,11 @@
     <text x="100" y="476" font-size="42" font-weight="400" fill="#202124">0</text>
     <circle cx="210" cy="460" r="42" fill="#f3f4f8"/>
     <text x="210" y="480" font-size="46" font-weight="500" fill="#202124">.</text>
-    <rect x="278" y="418" width="84" height="84" rx="18" fill="#1a3c6e"/>
-    <g fill="none" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M348 432 L308 432 L290 460 L308 488 L348 488 L348 432 Z"/>
-      <line x1="316" y1="446" x2="334" y2="474"/>
-      <line x1="334" y1="446" x2="316" y2="474"/>
+    <circle cx="320" cy="460" r="42" fill="#f3f4f8"/>
+    <path d="M345 446 L317 446 L304 460 L317 474 L345 474 L345 446 Z" fill="#1a3c6e"/>
+    <g fill="none" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="322" y1="453" x2="338" y2="467"/>
+      <line x1="338" y1="453" x2="322" y2="467"/>
     </g>
     <circle cx="430" cy="460" r="42" fill="#aecbfa"/>
     <text x="430" y="478" font-size="50" font-weight="500" fill="#062e6f">=</text>
