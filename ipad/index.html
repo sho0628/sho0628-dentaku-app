@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="計算機">
+<meta name="theme-color" content="#000000">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="./icon-180.png">
+<link rel="icon" type="image/svg+xml" href="./icon.svg">
+<title>計算機</title>
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+  html, body {
+    height: 100%;
+    background: #000;
+    color: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", "Hiragino Sans", "Yu Gothic", sans-serif;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+  .app {
+    position: relative;
+    margin: 12vh auto 0;
+    margin: 12dvh auto 0;
+    height: 88vh;
+    height: 88dvh;
+    display: flex;
+    flex-direction: column;
+    padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom) 0;
+  }
+
+  @media (min-width: 700px) {
+    .app { margin: 0 auto; height: 100vh; height: 100dvh; }
+  }
+
+  .meta-bar {
+    position: absolute;
+    top: calc(env(safe-area-inset-top) + 18px);
+    left: 22px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 5;
+  }
+  .auto-btn {
+    background: transparent;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+    color: #ff9f0a;
+    display: flex;
+    align-items: center;
+    transition: opacity 0.25s;
+  }
+  .auto-btn svg { display: block; }
+  .auto-btn.armed .sb-rect { fill: #ff9f0a; fill-opacity: 0.22; }
+  .auto-btn.flash { opacity: 0.45; }
+  .digit-count {
+    color: #3a3a3a;
+    font-size: 13px;
+    font-weight: 500;
+    font-family: inherit;
+    pointer-events: none;
+    min-width: 12px;
+  }
+
+  .display-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: stretch;
+    padding: 0 24px 14px 24px;
+    min-height: 0;
+    min-width: 0;
+    overflow: hidden;
+    width: 100%;
+  }
+  .display-expr {
+    font-size: 28px;
+    font-weight: 300;
+    color: #8e8e8e;
+    line-height: 1.1;
+    letter-spacing: -0.5px;
+    overflow: hidden;
+    white-space: nowrap;
+    width: 100%;
+    max-width: 100%;
+    direction: rtl;
+    margin-bottom: 4px;
+    min-height: 32px;
+  }
+  .display-expr-inner { direction: ltr; unicode-bidi: bidi-override; display: inline-block; }
+  .display-wrap {
+    overflow: hidden;
+    width: 100%;
+    max-width: 100%;
+    direction: rtl;
+    white-space: nowrap;
+  }
+  .display {
+    font-weight: 400;
+    font-size: 65px;
+    line-height: 1.05;
+    letter-spacing: -1.2px;
+    color: #fff;
+    direction: ltr;
+    unicode-bidi: bidi-override;
+    display: inline-block;
+    white-space: nowrap;
+    transition: font-size 0.05s linear;
+  }
+
+  .keypad {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(5, 1fr);
+    gap: 14px;
+    padding: 0 14px 16px 14px;
+    height: clamp(440px, 50vh, 620px);
+  }
+  button.key {
+    width: 100%;
+    height: 100%;
+    border-radius: 9999px;
+    border: none;
+    font-size: 38px;
+    font-weight: 400;
+    cursor: pointer;
+    color: #fff;
+    background: #333333;
+    font-family: inherit;
+    transition: filter 0.08s ease-out;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+  }
+  button.key:active { filter: brightness(1.6); }
+  button.key.func {
+    background: #7c7c7c;
+    color: #fff;
+    font-size: 32px;
+  }
+  button.key.func:active { filter: brightness(1.15); }
+  [data-action="clear"] .clear-icon { display: none; width: 36px; height: 46px; }
+  [data-action="clear"] .clear-text { display: inline; }
+  [data-action="clear"].back .clear-text { display: none; }
+  [data-action="clear"].back .clear-icon { display: block; }
+  button.key.op {
+    background: #ff9500;
+    color: #fff;
+    font-size: 44px;
+  }
+  .calc-icon-btn svg { width: 30px; height: 40px; }
+
+  @media (min-width: 700px) {
+    .app { padding-left: 32px; padding-right: 32px; }
+    .display { font-size: 95px; letter-spacing: -2px; }
+    .display-expr { font-size: 40px; min-height: 48px; margin-bottom: 6px; }
+    .display-area { padding: 0 12px 22px 12px; }
+    button.key { font-size: 42px; font-weight: 300; }
+    button.key.func { font-size: 40px; color: #fff; }
+    button.key.op { font-size: 52px; }
+    .keypad { gap: 14px; padding: 0 0 18px 0; height: clamp(490px, 53vh, 700px); }
+    .calc-icon-btn svg { width: 32px; height: 44px; }
+    [data-action="clear"] .clear-icon { width: 40px; height: 40px; }
+    .meta-bar { top: calc(env(safe-area-inset-top) + 26px); left: 32px; gap: 12px; }
+    .auto-btn svg { width: 30px; height: 24px; }
+    .digit-count { font-size: 14px; }
+  }
+
+  @media (min-width: 700px) and (orientation: landscape) {
+    .keypad { height: clamp(420px, 58vh, 600px); }
+    .display { font-size: 70px; }
+  }
+</style>
+</head>
+<body>
+  <div class="app" id="app">
+    <div class="meta-bar">
+      <button class="auto-btn" id="autoBtn" aria-label="auto">
+        <svg viewBox="0 0 28 24" width="28" height="24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect class="sb-rect" x="2" y="2" width="24" height="20" rx="3"/>
+          <line x1="9" y1="2" x2="9" y2="22"/>
+        </svg>
+      </button>
+      <span class="digit-count" id="digitCount"></span>
+    </div>
+    <div class="display-area">
+      <div class="display-expr" id="displayExpr"><span class="display-expr-inner" id="displayExprInner"></span></div>
+      <div class="display-wrap"><div class="display" id="display">0</div></div>
+    </div>
+    <div class="keypad" id="keypad">
+      <button class="key func" data-action="clear">
+        <span class="clear-text">AC</span>
+        <svg class="clear-icon" viewBox="0 0 32 24" preserveAspectRatio="none" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" vector-effect="non-scaling-stroke">
+          <path d="M30 3 L11 3 L1 12 L11 21 L30 21 A1 1 0 0 0 31 20 L31 4 A1 1 0 0 0 30 3 Z"/>
+          <line x1="14" y1="8.5" x2="23" y2="15.5"/>
+          <line x1="23" y1="8.5" x2="14" y2="15.5"/>
+        </svg>
+      </button>
+      <button class="key func" data-action="negate">+/−</button>
+      <button class="key func" data-action="percent">%</button>
+      <button class="key op" data-op="÷">÷</button>
+      <button class="key" data-digit="7">7</button>
+      <button class="key" data-digit="8">8</button>
+      <button class="key" data-digit="9">9</button>
+      <button class="key op" data-op="×">×</button>
+      <button class="key" data-digit="4">4</button>
+      <button class="key" data-digit="5">5</button>
+      <button class="key" data-digit="6">6</button>
+      <button class="key op" data-op="−">−</button>
+      <button class="key" data-digit="1">1</button>
+      <button class="key" data-digit="2">2</button>
+      <button class="key" data-digit="3">3</button>
+      <button class="key op" data-op="+">+</button>
+      <button class="key calc-icon-btn" data-action="calc" aria-label="calc">
+        <svg viewBox="0 0 28 38">
+          <rect x="2" y="2" width="24" height="34" rx="3.5" fill="#fff"/>
+          <rect x="5" y="5" width="18" height="9.5" rx="0.7" fill="#000"/>
+          <g fill="#000">
+            <circle cx="8" cy="20" r="2.2"/>
+            <circle cx="14" cy="20" r="2.2"/>
+            <circle cx="20" cy="20" r="2.2"/>
+            <circle cx="8" cy="26" r="2.2"/>
+            <circle cx="14" cy="26" r="2.2"/>
+            <circle cx="20" cy="26" r="2.2"/>
+            <circle cx="8" cy="32" r="2.2"/>
+            <circle cx="14" cy="32" r="2.2"/>
+            <circle cx="20" cy="32" r="2.2"/>
+          </g>
+        </svg>
+      </button>
+      <button class="key" data-digit="0">0</button>
+      <button class="key" data-digit=".">.</button>
+      <button class="key op" data-op="=">=</button>
+    </div>
+  </div>
+
+<script>
+(function () {
+  'use strict';
+
+  const displayEl = document.getElementById('display');
+  const displayWrapEl = document.querySelector('.display-wrap');
+  const displayExprEl = document.getElementById('displayExprInner');
+  const displayExprWrapEl = document.getElementById('displayExpr');
+  const autoBtn = document.getElementById('autoBtn');
+  const digitCountEl = document.getElementById('digitCount');
+  const clearBtn = document.querySelector('[data-action="clear"]');
+  const keypadEl = document.getElementById('keypad');
+
+  const state = {
+    current: '0',
+    previous: null,
+    operator: null,
+    awaitingOperand: false,
+    justEvaluated: false,
+    expression: '',
+    lastEquation: '',
+    target: null,
+    rigQueue: null,
+  };
+
+  function formatNumber(s) {
+    if (s === 'エラー') return s;
+    if (s == null) return '0';
+    let neg = '';
+    if (s.startsWith('-')) { neg = '-'; s = s.slice(1); }
+    const dotIdx = s.indexOf('.');
+    let intPart = dotIdx === -1 ? s : s.slice(0, dotIdx);
+    const decPart = dotIdx === -1 ? null : s.slice(dotIdx + 1);
+    if (intPart === '' || intPart === '-') intPart = '0';
+    const n = Number(intPart);
+    intPart = isFinite(n) ? n.toLocaleString('en-US') : intPart;
+    let out = neg + intPart;
+    if (decPart !== null) out += '.' + decPart;
+    return out;
+  }
+
+  function buildDisplayText() {
+    if (state.current === 'エラー') return 'エラー';
+    const cur = formatNumber(state.current);
+    if (state.justEvaluated) return cur;
+    if (!state.expression) return cur;
+    if (state.awaitingOperand) return state.expression;
+    return state.expression + cur;
+  }
+
+  function render() {
+    displayEl.textContent = buildDisplayText();
+    displayExprEl.textContent = state.justEvaluated ? state.lastEquation : '';
+    displayExprWrapEl.style.visibility = state.justEvaluated && state.lastEquation ? 'visible' : 'hidden';
+    const isInitial = state.current === '0' && !state.awaitingOperand && !state.expression && !state.justEvaluated;
+    clearBtn.classList.toggle('back', !isInitial);
+    autoBtn.classList.toggle('armed', state.target !== null);
+    digitCountEl.textContent = (state.rigQueue && state.rigQueue.length > 0) ? String(state.rigQueue.length) : '';
+  }
+
+  function applyDigit(d) {
+    if (state.justEvaluated) {
+      state.expression = '';
+      state.lastEquation = '';
+      state.justEvaluated = false;
+      state.previous = null;
+      state.operator = null;
+      state.awaitingOperand = false;
+      state.current = '0';
+    }
+    if (state.awaitingOperand) {
+      state.current = (d === '.') ? '0.' : d;
+      state.awaitingOperand = false;
+    } else if (d === '.') {
+      if (!state.current.includes('.')) state.current += '.';
+    } else if (state.current === '0') {
+      state.current = d;
+    } else {
+      if (state.current.replace('-', '').replace('.', '').length >= 9) return;
+      state.current += d;
+    }
+    render();
+  }
+
+  function compute(a, b, op) {
+    const x = parseFloat(a);
+    const y = parseFloat(b);
+    let r;
+    switch (op) {
+      case '+': r = x + y; break;
+      case '−': r = x - y; break;
+      case '×': r = x * y; break;
+      case '÷': r = y === 0 ? NaN : x / y; break;
+      default: r = y;
+    }
+    if (!isFinite(r) || isNaN(r)) return 'エラー';
+    return String(Math.round(r * 1e10) / 1e10);
+  }
+
+  function maybeArmTrick(op) {
+    if (op !== '+' || state.target === null) return;
+    const r = parseFloat(state.current);
+    if (isFinite(r) && state.target > r && r > 0) {
+      const diff = state.target - Math.round(r);
+      if (diff > 0) state.rigQueue = String(diff).split('');
+    }
+  }
+
+  function pressOperator(op) {
+    if (state.current === 'エラー') return;
+
+    if (op === '=') {
+      if (state.operator !== null && state.previous !== null && !state.awaitingOperand) {
+        const eq = state.expression + formatNumber(state.current) + '=';
+        state.current = compute(state.previous, state.current, state.operator);
+        state.previous = null;
+        state.operator = null;
+        state.awaitingOperand = false;
+        state.justEvaluated = true;
+        state.expression = '';
+        state.lastEquation = eq;
+      }
+      render();
+      return;
+    }
+
+    if (state.justEvaluated) {
+      state.expression = formatNumber(state.current) + op;
+      state.lastEquation = '';
+      state.previous = state.current;
+      state.operator = op;
+      state.awaitingOperand = true;
+      state.justEvaluated = false;
+      maybeArmTrick(op);
+      render();
+      return;
+    }
+
+    if (state.operator !== null && state.awaitingOperand) {
+      state.expression = state.expression.replace(/[+−×÷]$/, op);
+      state.operator = op;
+      render();
+      return;
+    }
+
+    if (state.operator !== null && state.previous !== null) {
+      state.expression = state.expression + formatNumber(state.current) + op;
+      const result = compute(state.previous, state.current, state.operator);
+      state.current = result;
+      state.previous = result;
+    } else {
+      state.expression = formatNumber(state.current) + op;
+      state.previous = state.current;
+    }
+    state.operator = op;
+    state.awaitingOperand = true;
+    maybeArmTrick(op);
+    render();
+  }
+
+  function pressClear() {
+    const isInitial = state.current === '0' && !state.awaitingOperand && !state.expression && !state.justEvaluated;
+
+    if (isInitial) {
+      state.rigQueue = null;
+      render();
+      return;
+    }
+
+    if (state.justEvaluated) {
+      state.current = '0';
+      state.previous = null;
+      state.operator = null;
+      state.awaitingOperand = false;
+      state.justEvaluated = false;
+      state.expression = '';
+      state.lastEquation = '';
+      state.rigQueue = null;
+      render();
+      return;
+    }
+
+    if (state.awaitingOperand) {
+      state.expression = state.expression.replace(/[+−×÷]$/, '');
+      state.operator = null;
+      state.previous = null;
+      state.awaitingOperand = false;
+      if (state.expression === formatNumber(state.current)) state.expression = '';
+      render();
+      return;
+    }
+
+    if (state.current === 'エラー') {
+      state.current = '0';
+    } else if (state.current.length <= 1 || (state.current.startsWith('-') && state.current.length === 2)) {
+      state.current = '0';
+    } else {
+      state.current = state.current.slice(0, -1);
+    }
+    render();
+  }
+
+  function pressNegate() {
+    if (state.current === '0' || state.current === 'エラー') return;
+    state.current = state.current.startsWith('-') ? state.current.slice(1) : '-' + state.current;
+    render();
+  }
+
+  function pressPercent() {
+    if (state.current === 'エラー') return;
+    state.current = String(parseFloat(state.current) / 100);
+    render();
+  }
+
+  function consumeRig() {
+    if (!state.rigQueue || state.rigQueue.length === 0) return false;
+    const d = state.rigQueue.shift();
+    applyDigit(d);
+    if (state.rigQueue.length === 0) {
+      render();
+    }
+    return true;
+  }
+
+  document.addEventListener('click', (e) => {
+    if (state.rigQueue === null) return;
+    if (state.rigQueue.length > 0) {
+      e.stopPropagation();
+      e.preventDefault();
+      consumeRig();
+      return;
+    }
+    const btn = e.target.closest('button.key');
+    const allowed = btn && btn.dataset.op === '=';
+    if (!allowed) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+  }, true);
+
+  keypadEl.addEventListener('click', (e) => {
+    const btn = e.target.closest('button.key');
+    if (!btn) return;
+    if (state.rigQueue !== null && state.rigQueue.length === 0) {
+      state.rigQueue = null;
+    }
+    if (btn.dataset.digit !== undefined) applyDigit(btn.dataset.digit);
+    else if (btn.dataset.op !== undefined) pressOperator(btn.dataset.op);
+    else if (btn.dataset.action === 'clear') pressClear();
+    else if (btn.dataset.action === 'negate') pressNegate();
+    else if (btn.dataset.action === 'percent') pressPercent();
+  });
+
+  let pressTimer = null;
+  function startDisplayPress() {
+    if (state.rigQueue) return;
+    pressTimer = setTimeout(memorizeFromDisplay, 650);
+  }
+  function cancelDisplayPress() {
+    if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
+  }
+  function memorizeFromDisplay() {
+    const v = parseFloat(state.current);
+    if (!isFinite(v) || v <= 0) return;
+    state.target = Math.round(v);
+    state.current = '0';
+    state.previous = null;
+    state.operator = null;
+    state.awaitingOperand = false;
+    state.justEvaluated = false;
+    state.expression = '';
+    state.lastEquation = '';
+    state.rigQueue = null;
+    render();
+    if (navigator.vibrate) navigator.vibrate(40);
+    flashAuto();
+  }
+  displayEl.addEventListener('mousedown', startDisplayPress);
+  displayEl.addEventListener('touchstart', startDisplayPress, { passive: true });
+  ['mouseup', 'mouseleave', 'touchend', 'touchcancel', 'touchmove'].forEach(ev => {
+    displayEl.addEventListener(ev, cancelDisplayPress);
+  });
+
+  function flashAuto() {
+    autoBtn.classList.add('flash');
+    setTimeout(() => autoBtn.classList.remove('flash'), 500);
+  }
+
+  function setTargetFromAuto() {
+    const future = new Date(Date.now() + 3 * 60 * 1000);
+    const m = String(future.getMonth() + 1);
+    const d = String(future.getDate()).padStart(2, '0');
+    const h = String(future.getHours()).padStart(2, '0');
+    const mm = String(future.getMinutes()).padStart(2, '0');
+    state.target = parseInt(m + d + h + mm, 10);
+    state.current = String(state.target);
+    state.previous = null;
+    state.operator = null;
+    state.awaitingOperand = false;
+    state.justEvaluated = false;
+    state.expression = '';
+    state.lastEquation = '';
+    state.rigQueue = null;
+    render();
+    flashAuto();
+    setTimeout(() => {
+      if (state.current === String(state.target) && !state.operator) {
+        state.current = '0';
+        render();
+      }
+    }, 1500);
+    if (navigator.vibrate) navigator.vibrate(40);
+  }
+
+  let autoPressTimer = null;
+  let autoLongFired = false;
+  function startAutoPress() {
+    if (state.rigQueue) return;
+    autoLongFired = false;
+    autoPressTimer = setTimeout(() => {
+      autoLongFired = true;
+      state.target = null;
+      state.rigQueue = null;
+      render();
+      flashAuto();
+      if (navigator.vibrate) navigator.vibrate([20, 40, 20]);
+    }, 800);
+  }
+  autoBtn.addEventListener('mousedown', startAutoPress);
+  autoBtn.addEventListener('touchstart', startAutoPress, { passive: true });
+  ['mouseup', 'mouseleave', 'touchend', 'touchcancel'].forEach(ev => {
+    autoBtn.addEventListener(ev, () => {
+      if (autoPressTimer) { clearTimeout(autoPressTimer); autoPressTimer = null; }
+    });
+  });
+  autoBtn.addEventListener('click', (e) => {
+    if (state.rigQueue) { e.preventDefault(); return; }
+    if (autoLongFired) { e.preventDefault(); return; }
+    setTargetFromAuto();
+  });
+
+  render();
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./service-worker.js').catch(() => {});
+    });
+  }
+})();
+</script>
+</body>
+</html>
