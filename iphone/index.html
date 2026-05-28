@@ -189,12 +189,39 @@
   @media (max-width: 699px) {
     .meta-bar {
       position: fixed;
-      top: calc(env(safe-area-inset-top) + 8px);
-      left: 12px;
+      top: calc(env(safe-area-inset-top) + 12px);
+      left: 0;
+      right: 0;
+      padding: 0 18px;
+      justify-content: space-between;
+      gap: 0;
     }
+    .meta-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .auto-btn, .meta-calc-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: #2b2b2b;
+      color: #fff;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      cursor: pointer;
+    }
+    .auto-btn svg, .meta-calc-btn svg { width: 22px; height: 22px; display: block; }
+    .auto-btn.armed { background: #ff9f0a; }
+    .auto-btn.armed { color: #fff; }
+    .digit-count { color: #9e9e9e; }
     .keypad {
       padding-bottom: 4px;
     }
+    .keypad-backspace-icon { width: 28px; height: 28px; }
   }
 </style>
 </head>
@@ -202,27 +229,45 @@
   <div class="app" id="app">
     <div class="meta-bar">
       <button class="auto-btn" id="autoBtn" aria-label="auto">
-        <svg viewBox="0 0 28 24" width="28" height="24" fill="none" stroke="currentColor" stroke-width="2">
-          <rect class="sb-rect" x="2" y="2" width="24" height="20" rx="3"/>
-          <line x1="9" y1="2" x2="9" y2="22"/>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="9"/>
+          <path d="M12 7v5l3 2"/>
         </svg>
       </button>
-      <span class="digit-count" id="digitCount"></span>
+      <div class="meta-right">
+        <span class="digit-count" id="digitCount"></span>
+        <button class="meta-calc-btn" aria-label="calc">
+          <svg viewBox="0 0 28 38">
+            <rect x="2" y="2" width="24" height="34" rx="3.5" fill="currentColor"/>
+            <rect x="5" y="5" width="18" height="9.5" rx="0.7" fill="#2b2b2b"/>
+            <g fill="#2b2b2b">
+              <circle cx="8" cy="20" r="2.2"/>
+              <circle cx="14" cy="20" r="2.2"/>
+              <circle cx="20" cy="20" r="2.2"/>
+              <circle cx="8" cy="26" r="2.2"/>
+              <circle cx="14" cy="26" r="2.2"/>
+              <circle cx="20" cy="26" r="2.2"/>
+              <circle cx="8" cy="32" r="2.2"/>
+              <circle cx="14" cy="32" r="2.2"/>
+              <circle cx="20" cy="32" r="2.2"/>
+            </g>
+          </svg>
+        </button>
+      </div>
     </div>
     <div class="display-area">
       <div class="display-expr" id="displayExpr"><span class="display-expr-inner" id="displayExprInner"></span></div>
       <div class="display-wrap"><div class="display" id="display">0</div></div>
     </div>
     <div class="keypad" id="keypad">
-      <button class="key func" data-action="clear">
-        <span class="clear-text">AC</span>
-        <svg class="clear-icon" viewBox="0 0 32 24" preserveAspectRatio="none" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" vector-effect="non-scaling-stroke">
+      <button class="key func" data-action="backspace" aria-label="backspace">
+        <svg class="keypad-backspace-icon" viewBox="0 0 32 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M30 3 L11 3 L1 12 L11 21 L30 21 A1 1 0 0 0 31 20 L31 4 A1 1 0 0 0 30 3 Z"/>
           <line x1="14" y1="8.5" x2="23" y2="15.5"/>
           <line x1="23" y1="8.5" x2="14" y2="15.5"/>
         </svg>
       </button>
-      <button class="key func" data-action="negate">+/−</button>
+      <button class="key func" data-action="clear">AC</button>
       <button class="key func" data-action="percent">%</button>
       <button class="key op" data-op="÷">÷</button>
       <button class="key" data-digit="7">7</button>
@@ -237,23 +282,7 @@
       <button class="key" data-digit="2">2</button>
       <button class="key" data-digit="3">3</button>
       <button class="key op" data-op="+">+</button>
-      <button class="key calc-icon-btn" data-action="calc" aria-label="calc">
-        <svg viewBox="0 0 28 38">
-          <rect x="2" y="2" width="24" height="34" rx="3.5" fill="#fff"/>
-          <rect x="5" y="5" width="18" height="9.5" rx="0.7" fill="#000"/>
-          <g fill="#000">
-            <circle cx="8" cy="20" r="2.2"/>
-            <circle cx="14" cy="20" r="2.2"/>
-            <circle cx="20" cy="20" r="2.2"/>
-            <circle cx="8" cy="26" r="2.2"/>
-            <circle cx="14" cy="26" r="2.2"/>
-            <circle cx="20" cy="26" r="2.2"/>
-            <circle cx="8" cy="32" r="2.2"/>
-            <circle cx="14" cy="32" r="2.2"/>
-            <circle cx="20" cy="32" r="2.2"/>
-          </g>
-        </svg>
-      </button>
+      <button class="key func" data-action="negate">+/−</button>
       <button class="key" data-digit="0">0</button>
       <button class="key" data-digit=".">.</button>
       <button class="key op" data-op="=">=</button>
@@ -270,7 +299,6 @@
   const displayExprWrapEl = document.getElementById('displayExpr');
   const autoBtn = document.getElementById('autoBtn');
   const digitCountEl = document.getElementById('digitCount');
-  const clearBtn = document.querySelector('[data-action="clear"]');
   const keypadEl = document.getElementById('keypad');
 
   const state = {
@@ -314,8 +342,6 @@
     displayEl.textContent = buildDisplayText();
     displayExprEl.textContent = state.justEvaluated ? state.lastEquation : '';
     displayExprWrapEl.style.visibility = state.justEvaluated && state.lastEquation ? 'visible' : 'hidden';
-    const isInitial = state.current === '0' && !state.awaitingOperand && !state.expression && !state.justEvaluated;
-    clearBtn.classList.toggle('back', !isInitial);
     autoBtn.classList.toggle('armed', state.target !== null);
     digitCountEl.textContent = (state.rigQueue && state.rigQueue.length > 0) ? String(state.rigQueue.length) : '';
   }
@@ -421,27 +447,22 @@
   }
 
   function pressClear() {
-    const isInitial = state.current === '0' && !state.awaitingOperand && !state.expression && !state.justEvaluated;
+    state.current = '0';
+    state.previous = null;
+    state.operator = null;
+    state.awaitingOperand = false;
+    state.justEvaluated = false;
+    state.expression = '';
+    state.lastEquation = '';
+    state.rigQueue = null;
+    render();
+  }
 
-    if (isInitial) {
-      state.rigQueue = null;
-      render();
-      return;
-    }
-
+  function pressBackspace() {
     if (state.justEvaluated) {
-      state.current = '0';
-      state.previous = null;
-      state.operator = null;
-      state.awaitingOperand = false;
-      state.justEvaluated = false;
-      state.expression = '';
-      state.lastEquation = '';
-      state.rigQueue = null;
-      render();
+      pressClear();
       return;
     }
-
     if (state.awaitingOperand) {
       state.expression = state.expression.replace(/[+−×÷]$/, '');
       state.operator = null;
@@ -451,7 +472,6 @@
       render();
       return;
     }
-
     if (state.current === 'エラー') {
       state.current = '0';
     } else if (state.current.length <= 1 || (state.current.startsWith('-') && state.current.length === 2)) {
@@ -509,6 +529,7 @@
     if (btn.dataset.digit !== undefined) applyDigit(btn.dataset.digit);
     else if (btn.dataset.op !== undefined) pressOperator(btn.dataset.op);
     else if (btn.dataset.action === 'clear') pressClear();
+    else if (btn.dataset.action === 'backspace') pressBackspace();
     else if (btn.dataset.action === 'negate') pressNegate();
     else if (btn.dataset.action === 'percent') pressPercent();
   });
