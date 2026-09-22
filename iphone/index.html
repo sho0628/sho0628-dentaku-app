@@ -64,6 +64,7 @@
     transition: opacity 0.25s;
   }
   .auto-btn svg { display: block; }
+  .meta-left, .meta-right { display: flex; align-items: center; gap: 8px; }
   .auto-btn.armed .sb-rect { fill: #ff9f0a; fill-opacity: 0.22; }
   .auto-btn.flash { opacity: 0.45; }
   .digit-count {
@@ -73,6 +74,10 @@
     font-family: inherit;
     pointer-events: none;
     min-width: 12px;
+  }
+  .sec-hand {
+    transform-origin: 12px 12px;
+    transition: transform 0.12s ease-out;
   }
 
   .display-area {
@@ -199,7 +204,7 @@
       justify-content: space-between;
       gap: 0;
     }
-    .meta-right {
+    .meta-left, .meta-right {
       display: flex;
       align-items: center;
       gap: 8px;
@@ -229,12 +234,14 @@
 <body>
   <div class="app" id="app">
     <div class="meta-bar">
-      <button class="auto-btn" id="autoBtn" aria-label="auto">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="9"/>
-          <path d="M12 7v5l3 2"/>
-        </svg>
-      </button>
+      <div class="meta-left">
+        <button class="auto-btn" id="autoBtn" aria-label="auto">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="9"/>
+            <line class="sec-hand" id="secHand" x1="12" y1="12" x2="12" y2="5"/>
+          </svg>
+        </button>
+      </div>
       <div class="meta-right">
         <span class="digit-count" id="digitCount"></span>
         <button class="meta-calc-btn" aria-label="calc">
@@ -300,6 +307,7 @@
   const displayExprWrapEl = document.getElementById('displayExpr');
   const autoBtn = document.getElementById('autoBtn');
   const digitCountEl = document.getElementById('digitCount');
+  const secHandEl = document.getElementById('secHand');
   const keypadEl = document.getElementById('keypad');
 
   const state = {
@@ -621,6 +629,37 @@
     if (state.rigQueue) { e.preventDefault(); return; }
     if (autoLongFired) { e.preventDefault(); return; }
     setTargetFromAuto();
+  });
+
+  let secTimer = null;
+  let lastHandDeg = null;
+  function updateSecHand(snap) {
+    const now = new Date();
+    const elapsedMs = now.getSeconds() * 1000 + now.getMilliseconds();
+    const deg = Math.floor(elapsedMs / 1000) * 6;
+    // Unwrap past 360 so the hand always sweeps forward instead of snapping back.
+    let target = deg;
+    if (lastHandDeg !== null) {
+      const base = Math.floor(lastHandDeg / 360) * 360;
+      target = base + deg;
+      if (target < lastHandDeg) target += 360;
+    }
+    if (snap || (lastHandDeg !== null && target - lastHandDeg > 360)) {
+      // Resyncing after the app was backgrounded: jump instead of spinning.
+      secHandEl.style.transition = 'none';
+      secHandEl.style.transform = 'rotate(' + target + 'deg)';
+      void secHandEl.getBoundingClientRect();
+      secHandEl.style.transition = '';
+    } else {
+      secHandEl.style.transform = 'rotate(' + target + 'deg)';
+    }
+    lastHandDeg = target;
+    if (secTimer) clearTimeout(secTimer);
+    secTimer = setTimeout(updateSecHand, 1000 - (elapsedMs % 1000));
+  }
+  updateSecHand(true);
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) updateSecHand(true);
   });
 
   render();
