@@ -1,4 +1,4 @@
-const CACHE_NAME = 'dentaku-iphone-v7';
+const CACHE_NAME = 'dentaku-iphone-v8';
 const ASSETS = [
   './',
   './index.html',
