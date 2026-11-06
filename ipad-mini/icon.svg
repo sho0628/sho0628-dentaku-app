@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#000"/>
+  <text x="466" y="138" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif" font-size="96" font-weight="100" fill="#fff" text-anchor="end">1234</text>
+
+  <g font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif" text-anchor="middle">
+    <circle cx="91" cy="200" r="30" fill="#a5a5a5"/>
+    <text x="91" y="210" font-size="22" font-weight="500" fill="#000">AC</text>
+    <circle cx="201" cy="200" r="30" fill="#a5a5a5"/>
+    <text x="201" y="209" font-size="20" font-weight="500" fill="#000">+/−</text>
+    <circle cx="311" cy="200" r="30" fill="#a5a5a5"/>
+    <text x="311" y="210" font-size="26" font-weight="500" fill="#000">%</text>
+    <circle cx="421" cy="200" r="30" fill="#ff9500"/>
+    <text x="421" y="213" font-size="36" font-weight="400" fill="#fff">÷</text>
+
+    <circle cx="91" cy="270" r="30" fill="#333"/>
+    <text x="91" y="282" font-size="32" font-weight="400" fill="#fff">7</text>
+    <circle cx="201" cy="270" r="30" fill="#333"/>
+    <text x="201" y="282" font-size="32" font-weight="400" fill="#fff">8</text>
+    <circle cx="311" cy="270" r="30" fill="#333"/>
+    <text x="311" y="282" font-size="32" font-weight="400" fill="#fff">9</text>
+    <circle cx="421" cy="270" r="30" fill="#ff9500"/>
+    <text x="421" y="284" font-size="40" font-weight="400" fill="#fff">×</text>
+
+    <circle cx="91" cy="340" r="30" fill="#333"/>
+    <text x="91" y="352" font-size="32" font-weight="400" fill="#fff">4</text>
+    <circle cx="201" cy="340" r="30" fill="#333"/>
+    <text x="201" y="352" font-size="32" font-weight="400" fill="#fff">5</text>
+    <circle cx="311" cy="340" r="30" fill="#333"/>
+    <text x="311" y="352" font-size="32" font-weight="400" fill="#fff">6</text>
+    <circle cx="421" cy="340" r="30" fill="#ff9500"/>
+    <text x="421" y="354" font-size="42" font-weight="400" fill="#fff">−</text>
+
+    <circle cx="91" cy="410" r="30" fill="#333"/>
+    <text x="91" y="422" font-size="32" font-weight="400" fill="#fff">1</text>
+    <circle cx="201" cy="410" r="30" fill="#333"/>
+    <text x="201" y="422" font-size="32" font-weight="400" fill="#fff">2</text>
+    <circle cx="311" cy="410" r="30" fill="#333"/>
+    <text x="311" y="422" font-size="32" font-weight="400" fill="#fff">3</text>
+    <circle cx="421" cy="410" r="30" fill="#ff9500"/>
+    <text x="421" y="423" font-size="40" font-weight="400" fill="#fff">+</text>
+
+    <rect x="61" y="450" width="170" height="60" rx="30" fill="#333"/>
+    <text x="91" y="492" font-size="32" font-weight="400" fill="#fff">0</text>
+    <circle cx="311" cy="480" r="30" fill="#333"/>
+    <text x="311" y="492" font-size="34" font-weight="500" fill="#fff">.</text>
+    <circle cx="421" cy="480" r="30" fill="#ff9500"/>
+    <text x="421" y="493" font-size="40" font-weight="400" fill="#fff">=</text>
+  </g>
+</svg>
